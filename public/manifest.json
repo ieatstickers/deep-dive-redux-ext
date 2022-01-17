@@ -1,0 +1,20 @@
+{
+  "manifest_version": 2,
+  "name": "Deep Dive: Redux",
+  "author": "Protected.net",
+  "description": "Redux read/write demo",
+  "version": "1.0",
+  "browser_action": {
+    "default_popup": "popup.html"
+  },
+  "icons": {},
+  "background": {
+    "scripts": [
+      "js/vendor/vendor.min.js",
+      "js/shared/shared.min.js",
+      "js/background/background.min.js"
+    ],
+    "persistent": true
+  },
+  "permissions": []
+}

@@ -88,13 +88,12 @@ export class Redux
   
   public static dispatch(...actions: Array<AnyAction>): Action<any>
   {
-    // shift + fn + f6 -- ONLY USE THIS
     const actionsByType = actions.reduce(
       (result, action, key, actions) => {
         
         // Read only instance can only dispatch actions whose type starts with 'init_'
         // All other actions must be sent to the write instance to be dispatched
-        if (this.readOnly && action.type.indexOf('init_') !== 0)
+        if (this.readOnly && action.type.indexOf('init_') === 0)
         {
           result.init.push(action);
         }
@@ -110,26 +109,34 @@ export class Redux
         other: []
       }
     );
-  
-    console.log('1. Sending dispatch request to background', actionsByType.other);
-  
-    chrome.runtime.sendMessage({
-      channel: 'redux:dispatch',
-      data: actionsByType.other
-    })
+    
+    // If this is a read only instance and there are actions other than init ones
+    if (this.readOnly && actionsByType.other.length)
+    {
+      // Send them to the background script
+      console.log('1. Sending dispatch request to background', actionsByType.other);
+    
+      chrome.runtime.sendMessage({
+        channel: 'redux:dispatch',
+        data: actionsByType.other
+      })
+    }
   
     if (!this.store)
     {
       throw new Error('Cannot dispatch Redux action - Redux store has not been created. Use Redux.createStore()');
     }
     
-    let actionsToDispatch = [];
+    const actionsToDispatch = this.readOnly ? actionsByType.init : actionsByType.other;
     
-    if(actionsToDispatch)
+    if (!actionsToDispatch.length)
+    {
+      return;
+    }
     
     // Dispatch action
     // @ts-ignore
-    const dispatchResponse = this.store.dispatch(actions);
+    const dispatchResponse = this.store.dispatch(actionsToDispatch);
     
     // Get all dispatch listeners
     const dispatchListeners = this.onDispatchListeners;

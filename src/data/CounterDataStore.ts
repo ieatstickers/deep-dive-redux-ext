@@ -25,10 +25,20 @@ export class CounterDataStore extends DataStore
   {
     Redux.dispatch({ type: 'counter/incremented' })
   }
+
+  public static incrementByTwo()
+  {
+    Redux.dispatch({ type: 'counter/incremented' }, { type: 'counter/incremented' })
+  }
   
   public static decrement()
   {
     Redux.dispatch({ type: 'counter/decremented' })
+  }
+  
+  public static decrementByTwo()
+  {
+    Redux.dispatch({ type: 'counter/decremented' }, { type: 'counter/decremented' })
   }
   
   public static getValue(): number

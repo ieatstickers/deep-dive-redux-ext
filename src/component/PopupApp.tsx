@@ -60,6 +60,10 @@ export class PopupApp extends React.Component<PopupAppProps, PopupAppState>
         <button onClick={this.decrement.bind(this)}>Decrement</button>
       </div>
       <div>
+        <button onClick={this.incrementByTwo.bind(this)}>Increment by Two</button>
+        <button onClick={this.decrementByTwo.bind(this)}>Decrement by Two</button>
+      </div>
+      <div>
         <button onClick={this.addToList.bind(this)}>Add to list</button>
         <button onClick={this.removeFromList.bind(this)}>Remove from list</button>
       </div>
@@ -74,6 +78,16 @@ export class PopupApp extends React.Component<PopupAppProps, PopupAppState>
   private decrement()
   {
     CounterDataStore.decrement()
+  }
+  
+  private incrementByTwo()
+  {
+    CounterDataStore.incrementByTwo();
+  }
+  
+  private decrementByTwo()
+  {
+    CounterDataStore.decrementByTwo()
   }
   
   private addToList()

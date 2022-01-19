@@ -9,6 +9,8 @@ import {
 } from 'redux';
 import initSubscriber from 'redux-subscriber';
 
+import { reduxBatch }  from '@manaflair/redux-batch';
+
 declare const chrome;
 
 export class Redux
@@ -81,32 +83,69 @@ export class Redux
       return appReducer(state, action)
     }
     
-    this.store = createStore(rootReducer, initialState);
+    this.store = createStore(rootReducer, initialState, reduxBatch);
   }
   
-  public static dispatch(action: AnyAction): Action<any>
+  public static dispatch(...actions: Array<AnyAction>): Action<any>
   {
+    // shift + fn + f6 -- ONLY USE THIS
+    const actionsByType = actions.reduce(
+      (result, action, key, actions) => {
+        
+        // Read only instance can only dispatch actions whose type starts with 'init_'
+        // All other actions must be sent to the write instance to be dispatched
+        if (this.readOnly && action.type.indexOf('init_') !== 0)
+        {
+          result.init.push(action);
+        }
+        else
+        {
+          result.other.push(action);
+        }
+        
+        return result;
+      },
+      {
+        init: [],
+        other: []
+      }
+    );
+  
+    console.log('1. Sending dispatch request to background', actionsByType.other);
+  
+    chrome.runtime.sendMessage({
+      channel: 'redux:dispatch',
+      data: actionsByType.other
+    })
+  
     if (!this.store)
     {
       throw new Error('Cannot dispatch Redux action - Redux store has not been created. Use Redux.createStore()');
     }
     
-    if (this.readOnly && !action.type.startsWith('init_'))
-    {
-      
-      console.log('1. Sending dispatch request to background', action);
-      
-      chrome.runtime.sendMessage({
-        channel: 'redux:dispatch',
-        data: action
-      })
-      
-      return;
-    }
+    let actionsToDispatch = [];
+    
+    if(actionsToDispatch)
     
     // Dispatch action
-    return this.store.dispatch(action);
+    // @ts-ignore
+    const dispatchResponse = this.store.dispatch(actions);
+    
+    // Get all dispatch listeners
+    const dispatchListeners = this.onDispatchListeners;
+    
+    // For each listener
+    for (let key in dispatchListeners)
+      if (dispatchListeners.hasOwnProperty(key))
+      {
+        // Call listener
+        dispatchListeners[key](actions);
+      }
+    
+    // Return dispatch response
+    return dispatchResponse;
   }
+  
   
   public static getState(): any
   {

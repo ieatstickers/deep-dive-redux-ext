@@ -14,7 +14,7 @@ Redux.registerDataStore(CounterDataStore.key, CounterDataStore);
 Redux.registerDataStore(ListDataStore.key, ListDataStore);
 
 // Init redux
-Redux.init(initialState, false);
+Redux.init(initialState);
 
 ReactDOM.render(
   <PopupApp/>,

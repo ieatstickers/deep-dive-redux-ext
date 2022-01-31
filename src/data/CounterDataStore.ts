@@ -23,7 +23,7 @@ export class CounterDataStore extends DataStore
   
   public static increment()
   {
-    Redux.dispatch({ type: 'counter/incremented' })
+    Redux.dispatch({ type: 'counter/incremented', async: true });
   }
 
   public static incrementByTwo()

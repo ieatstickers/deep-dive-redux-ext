@@ -1,4 +1,5 @@
 
+import { LocalStorage } from "phusion/src/Core/Storage/LocalStorage";
 import {
   combineReducers,
   createStore,
@@ -8,7 +9,6 @@ import {
   AnyAction
 } from 'redux';
 import initSubscriber from 'redux-subscriber';
-
 import { reduxBatch }  from '@manaflair/redux-batch';
 
 declare const chrome;
@@ -21,13 +21,14 @@ export class Redux
   protected static store: Store;
   protected static readOnly: boolean = false;
   protected static onDispatchListeners = {};
+  protected static dispatchQueue: Array<AnyAction> = [];
   
   public static init(initialState?: Object, readOnly: boolean = true)
   {
     this.readOnly = readOnly;
     // Create Redux store
     this.createStore(initialState);
-    this.setupListeners()
+    this.setupListeners();
   }
   
   private static setupListeners()
@@ -47,10 +48,8 @@ export class Redux
           })
           
           console.log('4. Updated state received from background', message.data)
-          for (const key in this.dataStores)
-          {
-            this.dataStores[key].initState(message.data[key]);
-          }
+          
+          Redux.dispatch(...initActions);
         }
       })
     }
@@ -105,6 +104,10 @@ export class Redux
         {
           result.init.push(action);
         }
+        else if (action.async && !this.readOnly)
+        {
+          result.async.push(action);
+        }
         else
         {
           result.other.push(action);
@@ -114,7 +117,8 @@ export class Redux
       },
       {
         init: [],
-        other: []
+        other: [],
+        async: []
       }
     );
     
@@ -133,6 +137,11 @@ export class Redux
     if (!this.store)
     {
       throw new Error('Cannot dispatch Redux action - Redux store has not been created. Use Redux.createStore()');
+    }
+    
+    if (actionsByType.async.length)
+    {
+      this.addToDispatchQueue(...actionsByType.async);
     }
     
     const actionsToDispatch = this.readOnly ? actionsByType.init : actionsByType.other;
@@ -196,6 +205,34 @@ export class Redux
     
     // store is THE redux store
     return this.subscriber.subscribe(keyPath, listener);
+  }
+  
+  public static setDispatchQueue(actions: Array<AnyAction>)
+  {
+    this.dispatchQueue = actions;
+    this.persistDispatchQueue(this.dispatchQueue);
+  }
+  
+  public static getDispatchQueue()
+  {
+    return this.dispatchQueue;
+  }
+  
+  public static addToDispatchQueue(...actions: Array<AnyAction>)
+  {
+    this.dispatchQueue = this.dispatchQueue.concat(actions);
+    this.persistDispatchQueue(this.dispatchQueue);
+  }
+  
+  public static clearDispatchQueue()
+  {
+    this.dispatchQueue = [];
+    this.persistDispatchQueue(this.dispatchQueue);
+  }
+  
+  private static persistDispatchQueue(dispatchQueue: Array<AnyAction>)
+  {
+    LocalStorage.set('redux:dispatch_queue', dispatchQueue);
   }
   
 }

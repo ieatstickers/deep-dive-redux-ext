@@ -59,7 +59,7 @@ export class ListDataStore extends DataStore
   
   public static addToList(listItem: string)
   {
-    Redux.dispatch({ type: 'list/add', data: listItem})
+    Redux.dispatch({ type: 'list/add', data: listItem, async: true})
   }
   
   public static removeLastItem()

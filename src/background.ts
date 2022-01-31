@@ -1,8 +1,13 @@
+import { AnyAction } from "redux";
 import { CounterDataStore } from "./data/CounterDataStore";
 import { ListDataStore } from "./data/ListDataStore";
 import { Redux } from "./redux/Redux";
 import { LocalStorage } from "phusion/src/Core/Storage/LocalStorage";
 declare const chrome;
+
+/**
+ * Redux
+ */
 
 // Get initial redux state from local storage
 const initialState = LocalStorage.get('persisted_state') || undefined;
@@ -36,3 +41,34 @@ chrome.runtime.onMessage.addListener((message) => {
     Redux.dispatch(...message.data);
   }
 })
+
+/**
+ * Redux Async Queue
+ */
+
+// Get queue from local storage (should usually be empty but will contain any actions that didn't get a chance to dispatch before browser was last closed)
+const initialQueue = LocalStorage.get('redux:dispatch_queue');
+
+if (initialQueue)
+{
+  Redux.setDispatchQueue(initialQueue);
+}
+
+// Setup interval
+setInterval(() => {
+  
+  // Get the full dispatch queue
+  const queue = Redux.getDispatchQueue();
+  
+  // Clear the queue on the Redux class
+  Redux.clearDispatchQueue();
+  
+  // Remove async flag from all actions so when we dispatch them this time, they get dispatched on the spot and aren't added to the queue again
+  const actionsToDispatch: Array<AnyAction> = queue.map((action) => {
+    action.async = false;
+    return action;
+  });
+  
+  // Dispatch actions
+  Redux.dispatch(...actionsToDispatch);
+}, 30000);

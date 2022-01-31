@@ -33,6 +33,6 @@ chrome.runtime.onMessage.addListener((message) => {
   if (message.channel === 'redux:dispatch')
   {
     console.log('2. Dispatch request received:', message.data);
-    Redux.dispatch(message.data);
+    Redux.dispatch(...message.data);
   }
 })

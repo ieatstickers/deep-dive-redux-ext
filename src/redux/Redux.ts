@@ -38,6 +38,14 @@ export class Redux
       chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         if (message.channel === 'redux:updated')
         {
+          // Build up array of init actions to be dispatched in one go
+          const initActions = Object.keys(this.dataStores).map((dataStoreKey) => {
+            return {
+              type: `init_${dataStoreKey}`,
+              data: message.data[dataStoreKey]
+            }
+          })
+          
           console.log('4. Updated state received from background', message.data)
           for (const key in this.dataStores)
           {
